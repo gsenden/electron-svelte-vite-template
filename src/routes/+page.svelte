@@ -1,4 +1,4 @@
-<h1>Hello World</h1>
+<h1>Template for a new SvelteKit project with TailwindCSS in Electron</h1>
 <div
 	class="
       /*
