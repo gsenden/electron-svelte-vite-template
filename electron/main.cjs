@@ -37,8 +37,23 @@ function startViteServer() {
       const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
       viteProcess = spawn(command, ['vite', 'dev'], {
         shell: true,
-        stdio: 'inherit',
+        stdio: ['ignore', 'pipe', 'pipe'],
         env: { ...process.env, NODE_ENV: 'development' }
+      });
+
+      // Handle Vite output
+      viteProcess.stdout.on('data', (data) => {
+        const output = data.toString().trim();
+        if (output) {
+          console.log('\x1b[36m%s\x1b[0m', output); // Cyan color for Vite output
+        }
+      });
+
+      viteProcess.stderr.on('data', (data) => {
+        const output = data.toString().trim();
+        if (output) {
+          console.error('\x1b[31m%s\x1b[0m', output); // Red color for errors
+        }
       });
 
       viteProcess.on('error', (error) => {
@@ -90,18 +105,18 @@ async function initialize() {
 
 async function cleanup() {
   if (viteProcess) {
-    console.log('Killing Vite process tree...');
+    console.log('\x1b[33m%s\x1b[0m', 'Killing Vite process tree...'); // Yellow color for cleanup message
     try {
       // Kill the entire process tree
       await killProcessTree(viteProcess.pid);
-      console.log('Process tree killed successfully');
+      console.log('\x1b[32m%s\x1b[0m', 'Process tree killed successfully'); // Green color for success
     } catch (error) {
-      console.error('Error killing process tree:', error);
+      console.error('\x1b[31m%s\x1b[0m', 'Error killing process tree:', error); // Red color for errors
       // Fallback to direct process kill
       try {
         viteProcess.kill('SIGKILL');
       } catch (killError) {
-        console.error('Error killing process directly:', killError);
+        console.error('\x1b[31m%s\x1b[0m', 'Error killing process directly:', killError); // Red color for errors
       }
     }
     viteProcess = null;
@@ -110,7 +125,7 @@ async function cleanup() {
 
 // Handle app quit
 app.on('quit', async () => {
-  console.log('App quitting...');
+  console.log('\x1b[33m%s\x1b[0m', 'App quitting...'); // Yellow color for quit message
   await cleanup();
 });
 
@@ -133,27 +148,27 @@ app.on('before-quit', async () => {
 
 // Handle process termination
 process.on('SIGINT', async () => {
-  console.log('SIGINT received...');
+  console.log('\x1b[33m%s\x1b[0m', 'SIGINT received...'); // Yellow color for signal message
   await cleanup();
   app.quit();
 });
 
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received...');
+  console.log('\x1b[33m%s\x1b[0m', 'SIGTERM received...'); // Yellow color for signal message
   await cleanup();
   app.quit();
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', async (error) => {
-  console.error('Uncaught exception:', error);
+  console.error('\x1b[31m%s\x1b[0m', 'Uncaught exception:', error); // Red color for errors
   await cleanup();
   app.quit();
 });
 
 // Handle unhandled rejections
 process.on('unhandledRejection', async (reason, promise) => {
-  console.error('Unhandled rejection:', reason);
+  console.error('\x1b[31m%s\x1b[0m', 'Unhandled rejection:', reason); // Red color for errors
   await cleanup();
   app.quit();
 }); 
